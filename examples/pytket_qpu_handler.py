@@ -3,9 +3,11 @@ from pytket.backends import Backend
 from qat.core import Job, Result
 from qat.interop.qiskit import qlm_to_qiskit
 from pytket.extensions.qiskit import qiskit_to_tk
+from pytket.utils import expectation_from_counts
+from pytket.circuit.display import render_circuit_jupyter
 
 
-def get_pytket_qpu_handler(backend: Backend, max_shots:int = 10) -> QPUHandler:
+def get_pytket_qpu_handler(backend: Backend, max_shots:int = 10000) -> QPUHandler:
 
     class PytketQPUHandler(QPUHandler):
 
@@ -27,17 +29,8 @@ def get_pytket_qpu_handler(backend: Backend, max_shots:int = 10) -> QPUHandler:
             )
 
             qlm_result = Result()
-            for shot in pytket_result.get_shots():
-                qlm_result.add_sample(self.shot_to_int(shot))
+            qlm_result.value = expectation_from_counts(pytket_result.get_counts())
 
             return qlm_result
-
-        @staticmethod
-        def shot_to_int(shot: list[int]) -> int:
-            index = 0
-            for bit in shot:
-                index <<= 1
-                index += bit
-            return index
 
     return PytketQPUHandler()
